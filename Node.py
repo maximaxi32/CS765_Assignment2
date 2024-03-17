@@ -34,7 +34,12 @@ class Node:
         self.interArrival = interArrival    # interArrival time between two mine block events
         self.minedCnt = 0   # count of the number of blocks mined by the node
         self.receivedCnt = 0    # count of the number of blocks received by the node
+        ''' 
+        Assignment-2 attributes added
+        '''
         self.isSelfish = selfish  # boolean to check if the node is selfish
+        self.lead=0
+        self.privateQueue=[]
 
     # function to get the ID of the node
     def getID(self):
@@ -164,6 +169,13 @@ class Node:
 
     # function to mine a block by a node
     def mineBlock(self, timestamp, prevBlock, ListOfPeers, eventQueue):
+        '''
+        Calling selfishMineBlock function if the node is selfish, not doing normal mining
+        '''
+        if self.idx==0 or self.idx==1:
+            self.selfishMineBlock(timestamp, prevBlock, ListOfPeers, eventQueue)
+            return
+
         # if the previous block is not the farthest block, then schedule the next mineBlock event on the new longest chain
         if prevBlock.BlkId != self.blockchain.farthestBlock.BlkId:
             # the last block of the new longest chain
@@ -335,6 +347,13 @@ class Node:
 
     # function to receive a block, sent by another peer
     def receiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
+        '''
+        Calling selfishReceiveBlock function if the node is selfish, not doing normal mining
+        '''
+        if self.idx==0 or self.idx==1:
+            self.selfishMineBlock(timestamp, prevBlock, ListOfPeers, eventQueue)
+            return
+
         # if the block is already in the blockchain, then ignore it
         for blk in self.blockchain.chain:
             if blk.BlkId == block.BlkId:
@@ -473,6 +492,148 @@ class Node:
                     prev_hash=blk.previous_hash
                     break
         return cnt
+
+
+    '''
+    Assignment-2 functions added
+    '''
+    # function to SELFISHLY mine a block by a node
+    def selfishMineBlock(self,timestamp, prevBlock, ListOfPeers, eventQueue):
+        if self.lead==0 and (prevBlock.BlkId != self.blockchain.farthestBlock.BlkId):            # the last block of the new longest chain
+            newprevBlock = self.blockchain.getLastBlock()
+            nextMine = np.random.exponential(self.tkMean)
+            newtimestamp = timestamp + nextMine
+            eventQueue.put(
+                [
+                    newtimestamp,
+                    Event.Event(
+                        self,
+                        newtimestamp,
+                        newprevBlock,
+                        "mineBlock",
+                        ListOfPeers,
+                        eventQueue,
+                    ),
+                ]
+            )
+            return
+
+        ''' 
+        Even if the transaction pool size is 0, selfish miner still mines
+        '''
+
+        # counting the number of blocks mined by the node in total
+        self.minedCnt += 1
+
+        # creating a new block to be mined
+        newBlock = Block.Block(
+            prevBlock.getHash(), timestamp, self.getID(), prevBlock.depth + 1
+        )
+
+        # adding coinbase transaction to the new block
+        coinbasetxn = Transaction.Transaction(
+            self.getID(), self.getID(), timestamp, ListOfPeers, "coinbase", 50
+        )
+        newBlock.addTransaction(coinbasetxn)
+        coinbasetxn.printTransaction("coinbase")
+
+        # create a Deep copy of the balances array from the farthest block in the longest chain
+        currBalances = listCopier(prevBlock.balances)
+        newBlock.balances = currBalances
+
+        # adding transactions from the transaction pool to the new mined block
+        for txn in self.txnpool:
+            # add upto 990 KiloBytes of transactions to the block, as block size limit is 1 MegaByte
+            if newBlock.size >= 990:
+                break
+
+            senderIdx = -1
+            receiverIdx = -1
+            # To get the indices of sender and receiver, from their IDs
+            for peer in ListOfPeers:
+                if peer.getID() == txn.sender:
+                    senderIdx = peer.idx
+                if peer.getID() == txn.receiver:
+                    receiverIdx = peer.idx
+
+            # if the sender has enough balance to send the amount, then update the balances and add the transaction to the block
+            if currBalances[senderIdx] >= txn.amount:
+                currBalances[senderIdx] -= txn.amount
+                currBalances[receiverIdx] += txn.amount
+                newBlock.balances = currBalances
+
+                # adding the transaction to the block
+                newBlock.addTransaction(txn)
+                self.txnpool.remove(
+                    txn
+                )  # remove the transaction from the transaction pool
+                self.verifiedPool.append(
+                    txn
+                )  # add the transaction to the verified transactions pool
+
+        # adding the newly mined block to the blockchain
+        newBlock.calculateHash()
+        self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
+
+        # adding the block to the selfish private queue
+        self.privateQueue.append(newBlock)
+        self.lead+=1
+
+        # writing the block to the log file
+        with open("blockLogs/Node{}.txt".format(self.idx), "a") as myfile:
+            myfile.write(
+                "SELFISH MINED Block with BlkId: {} @ Timestamp: {} by NodeIdx: {}".format(
+                    newBlock.BlkId, timestamp, self.idx
+                )
+                + "\n"
+            )
+
+        # updating the longest chain and farthest block, as the new block is on the longest chain
+        if newBlock.depth > self.blockchain.longestLength:
+            self.blockchain.longestLength = newBlock.depth
+            self.blockchain.farthestBlock = newBlock
+
+        ''' VALID ONLY FOR HONEST MINERS
+        # broadcasting the newly mined block to its neighbors, with latency based on block size
+        for neighbor in self.neighbors:
+            newtimestamp = timestamp + Latency.generateLatency(
+                ListOfPeers, self.idx, neighbor.idx, newBlock.size
+            )
+
+            # creating a deepcopy of the block to be broadcasted, to prevent pass by reference
+            newDeepBlock = newBlock.deepCopyBlk()
+            # setting the receiveBlock event for the neighbors in the eventQueue
+            eventQueue.put(
+                [
+                    newtimestamp,
+                    Event.Event(
+                        neighbor,
+                        newtimestamp,
+                        newDeepBlock,
+                        "receiveBlock",
+                        ListOfPeers,
+                        eventQueue,
+                    ),
+                ]
+            )
+        '''
+
+        # adding the event to mine the next block after the intended random delay
+        nextMine = np.random.exponential(self.tkMean)
+        newtimestamp = timestamp + nextMine
+        eventQueue.put(
+            [
+                newtimestamp,
+                Event.Event(
+                    self, newtimestamp, newBlock, "mineBlock", ListOfPeers, eventQueue
+                ),
+            ]
+        )
+        
+    # function to SELFISHLY receive a block, sent by another peer
+    def selfishReceiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
+        pass
+
 
 # function to generate a deepcopy of a list
 def listCopier(lst):
