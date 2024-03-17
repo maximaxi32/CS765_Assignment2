@@ -1,0 +1,32 @@
+graph parent {
+	node [color=teal shape=box3d]
+	edge [color=brown dir=forward]
+	rankdir=LR splines=line
+	1 [label=G]
+	"2f2234a4-01e4-46bb-9bff-3fc993337c83" [label=2 fillcolor=darkseagreen style=filled]
+	"b823bd83-3de3-4891-a5f0-73a78f53003a" [label=2]
+	"720ebb4f-bf00-4524-98e6-7d0b2634b36a" [label=3 fillcolor=gold style=filled]
+	"b6ce5fff-6211-424e-8cae-0ae45b50bc14" [label=4 fillcolor=darkseagreen style=filled]
+	"cff2554c-6f53-47a3-b355-57e1fedc730b" [label=5 fillcolor=gold style=filled]
+	"4ff35855-9074-454b-b859-7ceb7196238a" [label=6]
+	"0e7c7605-f0c1-4be5-ad30-5fd5b45f7573" [label=6 fillcolor=gold style=filled]
+	"1ab3a4fe-c2e6-4847-905b-27a7703c2fe9" [label=7 fillcolor=gold style=filled]
+	"00a93e6e-349c-469c-95e0-9caf2591ea48" [label=8]
+	"d0c6efa9-4236-4f61-aec5-6d37a2220caa" [label=9]
+	"be986411-eac2-4324-9f93-bf44f6271f44" [label=10]
+	"3921c6f8-9795-44e4-b749-55bf60894dd1" [label=11]
+	"442793f8-83df-4828-be31-3bd76a80f711" [label=12 fillcolor=gold style=filled]
+	1 -- "2f2234a4-01e4-46bb-9bff-3fc993337c83"
+	1 -- "b823bd83-3de3-4891-a5f0-73a78f53003a"
+	"2f2234a4-01e4-46bb-9bff-3fc993337c83" -- "720ebb4f-bf00-4524-98e6-7d0b2634b36a"
+	"720ebb4f-bf00-4524-98e6-7d0b2634b36a" -- "b6ce5fff-6211-424e-8cae-0ae45b50bc14"
+	"b6ce5fff-6211-424e-8cae-0ae45b50bc14" -- "cff2554c-6f53-47a3-b355-57e1fedc730b"
+	"cff2554c-6f53-47a3-b355-57e1fedc730b" -- "4ff35855-9074-454b-b859-7ceb7196238a"
+	"cff2554c-6f53-47a3-b355-57e1fedc730b" -- "0e7c7605-f0c1-4be5-ad30-5fd5b45f7573"
+	"0e7c7605-f0c1-4be5-ad30-5fd5b45f7573" -- "1ab3a4fe-c2e6-4847-905b-27a7703c2fe9"
+	"1ab3a4fe-c2e6-4847-905b-27a7703c2fe9" -- "00a93e6e-349c-469c-95e0-9caf2591ea48"
+	"00a93e6e-349c-469c-95e0-9caf2591ea48" -- "d0c6efa9-4236-4f61-aec5-6d37a2220caa"
+	"d0c6efa9-4236-4f61-aec5-6d37a2220caa" -- "be986411-eac2-4324-9f93-bf44f6271f44"
+	"be986411-eac2-4324-9f93-bf44f6271f44" -- "3921c6f8-9795-44e4-b749-55bf60894dd1"
+	"3921c6f8-9795-44e4-b749-55bf60894dd1" -- "442793f8-83df-4828-be31-3bd76a80f711"
+}

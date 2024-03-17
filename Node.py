@@ -15,7 +15,7 @@ import Blockchain
 # class describing a Peer node in the network
 class Node:
     # constructor
-    def __init__(self, n, expMean, idx, interArrival):
+    def __init__(self, n, expMean, idx, interArrival,selfish):
         self.Id = str(uuid.uuid4()) # unique ID of the node
         self.neighbors = [] # list of neighbors of the node
         self.isSlow = False # boolean to check if the node is slow
@@ -34,6 +34,7 @@ class Node:
         self.interArrival = interArrival    # interArrival time between two mine block events
         self.minedCnt = 0   # count of the number of blocks mined by the node
         self.receivedCnt = 0    # count of the number of blocks received by the node
+        self.isSelfish = selfish  # boolean to check if the node is selfish
 
     # function to get the ID of the node
     def getID(self):

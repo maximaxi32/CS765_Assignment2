@@ -19,7 +19,7 @@ def plotter(ListOfPeers):
         g = Graph(
             "parent",
             filename="graph{}.png".format(peer.idx),
-            node_attr={"shape": "box3d", "color": "teal"},
+            node_attr={"shape": "box3d", "color": "teal"} ,
             format="png",
             edge_attr={"dir": "forward", "color": "brown"},
         )
@@ -29,6 +29,12 @@ def plotter(ListOfPeers):
         for key in peer.blockchain.chain:
             if key.BlkId == "1":
                 g.node(key.BlkId, label="G")
+                continue
+            if key.owner == ListOfPeers[0].Id :
+                g.node(key.BlkId, label=str(key.depth), fillcolor="darkseagreen",style="filled")
+                continue
+            if key.owner == ListOfPeers[1].Id :
+                g.node(key.BlkId, label=str(key.depth), fillcolor="gold",style="filled")
                 continue
             g.node(key.BlkId, label=str(key.depth))
 

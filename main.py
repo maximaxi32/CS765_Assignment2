@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser()
 def main():
     # Declaring user arguments
     parser.add_argument("--n", type=int, required=True)  # number of Nodes
-    parser.add_argument("--z0", type=float, required=True)  # percentage of slow nodes
+    # parser.add_argument("--z0", type=float, required=True)  # percentage of slow nodes
     parser.add_argument(
         "--z1", type=float, required=True
     )  # percentage of low CPU nodes
@@ -40,15 +40,22 @@ def main():
     parser.add_argument(
         "--Sim", type=float, required=True
     )  # Total simulation time in seconds
-
+    parser.add_argument(
+        "--Zeta1", type=float, required=True
+    )
+    parser.add_argument(
+        "--Zeta2", type=float, required=True
+    )
     # Parsing the arguments
     args = parser.parse_args()
     n = args.n
-    z0 = args.z0
+    # z0 = args.z0
     z1 = args.z1
     Tx = args.Tx
     Itr = args.Itr
     timeLimit = args.Sim
+    zeta1 = args.Zeta1
+    zeta2 = args.Zeta2
 
     eventQueue = (
         PriorityQueue()
@@ -68,7 +75,11 @@ def main():
     # Initializing the list of peer nodes
     ListOfPeers = []
     for _ in range(0, n):
-        newNode = Node.Node(n, Tx, _, Itr)
+        if _==0 or _==1:
+            newNode = Node.Node(n, Tx, _, Itr,True)
+        else:
+            newNode = Node.Node(n, Tx, _, Itr,False)
+
         ListOfPeers.append(newNode)
         newNode.rhos = [0] * n
         firstTxn = np.random.exponential(Tx)
@@ -88,7 +99,7 @@ def main():
         )
 
     # Assigning isSlow and isLowCPU values to the Nodes
-    assign_z0(ListOfPeers, z0, n)
+    assign_z0(ListOfPeers, n)
     assign_z1(ListOfPeers, z1, n)
 
     # Generating the first mineBlock event for each Node
@@ -156,34 +167,45 @@ def main():
 
 
 # Function to assign isSlow values to the Nodes randomly
-def assign_z0(ListOfPeers, z0, n):
-    numTrues = int((z0 * n) / 100)
+def assign_z0(ListOfPeers, n):
+    ListOfPeers[0].setSlow(False)
+    ListOfPeers[1].setSlow(False)
+
+    #Assigning fast and slow nodes to other nodes
+    N=n-2 
+    z0=50   #half of all the honest nodes are slow
+    numTrues = int((z0 * N) / 100)
     labels = [True] * numTrues
-    labelsFalse = [False] * (n - numTrues)
+    labelsFalse = [False] * (N - numTrues)
     labels += labelsFalse
     random.shuffle(labels)
-    for _ in range(n):
-        ListOfPeers[_].setSlow(labels[_])
+    for _ in range(2,n):
+        ListOfPeers[_].setSlow(labels[_-2])
 
 
 # Function to assign isLowCPU values to the Nodes randomly
 def assign_z1(ListOfPeers, z1, n):
-    # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) = 1
+    args = parser.parse_args()
+    ListOfPeers[0].setHashPower(args.Zeta1 / 100)
+    ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
-    numTrues = int((z1 * n) / 100)
+    N = n-2
+    # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) = 1
+    numTrues = int((z1 * N) / 100)
     labels = [True] * numTrues
-    hashPowerofLow = 1 * 100 / (10 * n - 9 * numTrues)
+    hashPowerofLow = (1) * (100-args.Zeta1-args.Zeta2) / (10 * N - 9 * numTrues)
     hashPowerofHigh = 10 * hashPowerofLow
 
-    labelsFalse = [False] * (n - numTrues)
+    labelsFalse = [False] * (N - numTrues)
     labels += labelsFalse
     random.shuffle(labels)
-    for _ in range(n):
-        ListOfPeers[_].setLowCPU(labels[_])
-        if labels[_] == True:
+    for _ in range(2,n):
+        ListOfPeers[_].setLowCPU(labels[_-2])
+        if labels[_-2] == True:
             ListOfPeers[_].setHashPower(hashPowerofLow / 100)
         else:
-            ListOfPeers[_].setHashPower(hashPowerofHigh / 100)
+            ListOfPeers[_].setHashPower(hashPowerofHigh / 100)    
+    
 
 
 # function to generate Rho values between every pair of nodes
