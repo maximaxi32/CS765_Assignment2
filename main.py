@@ -119,6 +119,8 @@ def main():
             ]
         )
 
+    
+
     # Create Network of peers
     Network.createNetwork(ListOfPeers)
 
@@ -136,6 +138,16 @@ def main():
         if currEvent.eventType == "generateTransaction":
             genTxn += 1
         currEvent.execute(ListOfPeers, eventQueue)
+
+    # After simulation completes, adding the remaining privateQueue blocks to the blockchain
+    for block in ListOfPeers[0].privateQueue:
+        ListOfPeers[0].blockchain.addBlock(block, ListOfPeers[0].blockchain.farthestBlock)
+        ListOfPeers[0].blockchain.farthestBlock = block
+        ListOfPeers[0].blockchain.longestLength = block.depth
+    for block in ListOfPeers[1].privateQueue:
+        ListOfPeers[1].blockchain.addBlock(block, ListOfPeers[1].blockchain.farthestBlock)
+        ListOfPeers[1].blockchain.farthestBlock = block
+        ListOfPeers[1].blockchain.longestLength = block.depth
 
     # Saving the blockchain as images for all the peers
     Graph.plotter(ListOfPeers)

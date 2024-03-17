@@ -351,7 +351,7 @@ class Node:
         Calling selfishReceiveBlock function if the node is selfish, not doing normal mining
         '''
         if self.idx==0 or self.idx==1:
-            self.selfishMineBlock(timestamp, prevBlock, ListOfPeers, eventQueue)
+            self.selfishReceiveBlock(timestamp, block, ListOfPeers, eventQueue)
             return
 
         # if the block is already in the blockchain, then ignore it
@@ -479,13 +479,16 @@ class Node:
 
     # function to get the number of blocks mined by the node in its longest chain
     def cntInLongest(self):
+        return 0
         cnt=0
         if self.blockchain.farthestBlock.owner==self.Id:
             cnt+=1
         prev_hash=self.blockchain.farthestBlock.previous_hash
         # iteratively travelling back the blockchain from farthest block to genesis block
         while prev_hash!=self.blockchain.genesisBlock.hash:
+            print(prev_hash,self.blockchain.genesisBlock.hash)
             for blk in self.blockchain.chain:
+                #print("count function")
                 if blk.getHash()==prev_hash:
                     if blk.owner==self.Id:
                         cnt+=1
@@ -499,7 +502,7 @@ class Node:
     '''
     # function to SELFISHLY mine a block by a node
     def selfishMineBlock(self,timestamp, prevBlock, ListOfPeers, eventQueue):
-        if self.lead==0 and (prevBlock.BlkId != self.blockchain.farthestBlock.BlkId):            # the last block of the new longest chain
+        if self.lead==0 and (prevBlock.BlkId != self.blockchain.farthestBlock.BlkId):   # the last block of the new longest chain
             newprevBlock = self.blockchain.getLastBlock()
             nextMine = np.random.exponential(self.tkMean)
             newtimestamp = timestamp + nextMine
@@ -573,7 +576,7 @@ class Node:
 
         # adding the newly mined block to the blockchain
         newBlock.calculateHash()
-        self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
+        #self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
 
         # adding the block to the selfish private queue
         self.privateQueue.append(newBlock)
@@ -589,9 +592,9 @@ class Node:
             )
 
         # updating the longest chain and farthest block, as the new block is on the longest chain
-        if newBlock.depth > self.blockchain.longestLength:
-            self.blockchain.longestLength = newBlock.depth
-            self.blockchain.farthestBlock = newBlock
+        # if newBlock.depth > self.blockchain.longestLength:
+        #     self.blockchain.longestLength = newBlock.depth
+        #     self.blockchain.farthestBlock = newBlock
 
         ''' VALID ONLY FOR HONEST MINERS
         # broadcasting the newly mined block to its neighbors, with latency based on block size
@@ -632,7 +635,199 @@ class Node:
         
     # function to SELFISHLY receive a block, sent by another peer
     def selfishReceiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
-        pass
+        # if the block is already in the blockchain, then ignore it
+        for blk in self.blockchain.chain:
+            if blk.BlkId == block.BlkId:
+                return
+
+        #when lead greater than 2 and decreases by 1
+        if self.lead > 2 and block.previous_hash==self.blockchain.farthestBlock.getHash():
+            self.lead-=1
+            # broadcasting the newly mined block to its neighbors, with latency based on block size
+            newBlock=self.privateQueue[0]
+            self.privateQueue.pop(0)
+            parentBlock=self.blockchain.getBlock(newBlock.previous_hash)
+            self.blockchain.addBlock(newBlock, parentBlock)
+            self.blockchain.longestLength = newBlock.depth
+            self.blockchain.farthestBlock = newBlock
+            for neighbor in self.neighbors:
+                newtimestamp = timestamp + Latency.generateLatency(
+                    ListOfPeers, self.idx, neighbor.idx, newBlock.size
+                )
+
+                # creating a deepcopy of the block to be broadcasted, to prevent pass by reference
+                newDeepBlock = newBlock.deepCopyBlk()
+                # setting the receiveBlock event for the neighbors in the eventQueue
+                eventQueue.put(
+                    [
+                        newtimestamp,
+                        Event.Event(
+                            neighbor,
+                            newtimestamp,
+                            newDeepBlock,
+                            "receiveBlock",
+                            ListOfPeers,
+                            eventQueue,
+                        ),
+                    ]
+                )
+
+       # when lead equals 2 or equals 1 and becomes zero
+        elif (self.lead == 2 or self.lead==1) and block.previous_hash==self.blockchain.farthestBlock.getHash():
+            self.lead=0
+            # emptying the private queue
+            while len(self.privateQueue)>0:
+                newBlock=self.privateQueue[0]
+                self.privateQueue.pop(0)
+                parentBlock=self.blockchain.getBlock(newBlock.previous_hash)
+                self.blockchain.addBlock(newBlock, parentBlock)
+                self.blockchain.longestLength = newBlock.depth
+                self.blockchain.farthestBlock = newBlock
+                for neighbor in self.neighbors:
+                    newtimestamp = timestamp + Latency.generateLatency(
+                        ListOfPeers, self.idx, neighbor.idx, newBlock.size
+                    )
+
+                    # creating a deepcopy of the block to be broadcasted, to prevent pass by reference
+                    newDeepBlock = newBlock.deepCopyBlk()
+                    # setting the receiveBlock event for the neighbors in the eventQueue
+                    eventQueue.put(
+                        [
+                            newtimestamp,
+                            Event.Event(
+                                neighbor,
+                                newtimestamp,
+                                newDeepBlock,
+                                "receiveBlock",
+                                ListOfPeers,
+                                eventQueue,
+                            ),
+                        ]
+                    )
+
+
+        
+
+            
+        else:
+            
+            # check if parent block exists in the blockchain, if not, put the block in the list of pending blocks
+            parentblock = self.blockchain.getBlock(block.previous_hash)
+            if parentblock == None:
+                if block in self.pending:
+                    return
+                self.pending.append(block)
+                return
+
+            # make a deep copy of block to prevent pass by reference
+            copyOfBlk = block.deepCopyBlk()
+
+            # if the block is invalid, then put it in the list of invalid blocks
+            if not self.verifyBlock(copyOfBlk, ListOfPeers):
+                # print("verification failed " + self.Id)
+                self.invalid.append(copyOfBlk)
+                return
+
+            # ensure that the transactions in the block are not in the transaction pool and verified pool
+            txnpoolCopy = listCopier(self.txnpool)
+            verifiedPoolCopy = listCopier(self.verifiedPool)
+            for txn in copyOfBlk.transactions:
+                if txn in verifiedPoolCopy:
+                    pass
+                else:
+                    verifiedPoolCopy.append(txn)
+                if txn in txnpoolCopy:
+                    txnpoolCopy.remove(txn)
+            self.txnpool = txnpoolCopy
+            self.verifiedPool = verifiedPoolCopy
+
+            # to count the number of blocks received by the node
+            self.receivedCnt += 1
+
+            # if the received block makes a new longest chain, then update the longest length and farthest block
+            copyOfBlk.depth = parentblock.depth + 1
+            if copyOfBlk.depth > self.blockchain.longestLength:
+                self.blockchain.longestLength = copyOfBlk.depth
+                self.blockchain.farthestBlock = copyOfBlk
+
+            # adding the block to the blockchain
+            self.blockchain.addBlock(copyOfBlk, parentblock)
+            # writing the block to the log file
+            with open("blockLogs/Node{}.txt".format(self.idx), "a") as myfile:
+                myfile.write(
+                    "RECEIVED Block with BlkId: {} @ Timestamp: {} by NodeIdx: {}".format(
+                        copyOfBlk.BlkId, timestamp, self.idx
+                    )
+                    + "\n"
+                )
+
+            #check recursively if children of the received block exist in pending
+            stillsearching = True
+            while stillsearching == True and len(self.pending) > 0:
+                stillsearching = False
+                for blk in self.pending:
+                    for currBlock in self.blockchain.chain:
+                        if blk.previous_hash == currBlock.getHash():
+                            # if the received block is a parent of one of the pending blocks, add it to the blockchain
+                            self.pending.remove(blk)
+                            self.blockchain.addBlock(blk, currBlock)
+                            # writing the block to the log file
+                            with open(
+                                "blockLogs/Node{}.txt".format(self.idx), "a"
+                            ) as myfile:
+                                myfile.write(
+                                    "RECEIVED Block with BlkId: {} @ Timestamp: {} by NodeIdx: {}".format(
+                                        blk.BlkId, timestamp, self.idx
+                                    )
+                                    + "\n"
+                                )
+
+                            # updating the longest chain and farthest block if the new block is on the longest chain
+                            blk.depth = currBlock.depth + 1
+                            if blk.depth > self.blockchain.longestLength:
+                                self.blockchain.longestLength = blk.depth
+                                self.blockchain.farthestBlock = blk
+
+                        # broadcasting the receive block event to the neighbors, for one of the pending blocks
+                            for neighbor in self.neighbors:
+                                newtimestamp = timestamp + Latency.generateLatency(
+                                    ListOfPeers, self.idx, neighbor.idx, blk.size
+                                )
+                                eventQueue.put(
+                                    [
+                                        newtimestamp,
+                                        Event.Event(
+                                            neighbor,
+                                            newtimestamp,
+                                            blk.deepCopyBlk(),
+                                            "receiveBlock",
+                                            ListOfPeers,
+                                            eventQueue,
+                                        ),
+                                    ]
+                                )
+                            #to check if some chain is being formed by the pending blocks
+                            stillsearching = True
+                            break
+
+            #broadcasting the block to neighbors, with some latency based on the size of the block
+            for neighbor in self.neighbors:
+                newtimestamp = timestamp + Latency.generateLatency(
+                    ListOfPeers, self.idx, neighbor.idx, copyOfBlk.size
+                )
+                eventQueue.put(
+                    [
+                        newtimestamp,
+                        Event.Event(
+                            neighbor,
+                            newtimestamp,
+                            copyOfBlk,
+                            "receiveBlock",
+                            ListOfPeers,
+                            eventQueue,
+                        ),
+                    ]
+                )
 
 
 # function to generate a deepcopy of a list
