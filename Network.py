@@ -2,7 +2,7 @@
 import random
 import networkx as nx
 import matplotlib.pyplot as plt
-import os 
+import os
 
 # importing user modules
 import Node

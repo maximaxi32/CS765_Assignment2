@@ -40,12 +40,8 @@ def main():
     parser.add_argument(
         "--Sim", type=float, required=True
     )  # Total simulation time in seconds
-    parser.add_argument(
-        "--Zeta1", type=float, required=True
-    )
-    parser.add_argument(
-        "--Zeta2", type=float, required=True
-    )
+    parser.add_argument("--Zeta1", type=float, required=True)
+    parser.add_argument("--Zeta2", type=float, required=True)
     # Parsing the arguments
     args = parser.parse_args()
     n = args.n
@@ -75,10 +71,10 @@ def main():
     # Initializing the list of peer nodes
     ListOfPeers = []
     for _ in range(0, n):
-        if _==0 or _==1:
-            newNode = Node.Node(n, Tx, _, Itr,True)
+        if _ == 0 or _ == 1:
+            newNode = Node.Node(n, Tx, _, Itr, True)
         else:
-            newNode = Node.Node(n, Tx, _, Itr,False)
+            newNode = Node.Node(n, Tx, _, Itr, False)
 
         ListOfPeers.append(newNode)
         newNode.rhos = [0] * n
@@ -119,8 +115,6 @@ def main():
             ]
         )
 
-    
-
     # Create Network of peers
     Network.createNetwork(ListOfPeers)
 
@@ -141,11 +135,15 @@ def main():
 
     # After simulation completes, adding the remaining privateQueue blocks to the blockchain
     for block in ListOfPeers[0].privateQueue:
-        ListOfPeers[0].blockchain.addBlock(block, ListOfPeers[0].blockchain.farthestBlock)
+        ListOfPeers[0].blockchain.addBlock(
+            block, ListOfPeers[0].blockchain.farthestBlock
+        )
         ListOfPeers[0].blockchain.farthestBlock = block
         ListOfPeers[0].blockchain.longestLength = block.depth
     for block in ListOfPeers[1].privateQueue:
-        ListOfPeers[1].blockchain.addBlock(block, ListOfPeers[1].blockchain.farthestBlock)
+        ListOfPeers[1].blockchain.addBlock(
+            block, ListOfPeers[1].blockchain.farthestBlock
+        )
         ListOfPeers[1].blockchain.farthestBlock = block
         ListOfPeers[1].blockchain.longestLength = block.depth
 
@@ -163,14 +161,22 @@ def main():
                 ListOfPeers[peer].isLowCPU,
             )
         )
+        """
+        Was displayed in assignment 1, but not in assignment 2
         print("Number of Blocks mined:", ListOfPeers[peer].minedCnt, end=" || ")
         print("Number of Blocks received:", ListOfPeers[peer].receivedCnt)
+        """
+
         print(
             "Length of longest chain in Blockchain:",
             ListOfPeers[peer].blockchain.farthestBlock.depth,
         )
         totalMined += ListOfPeers[peer].minedCnt
-        print("Ratio of Blocks mined on the longest chain : Total Blocks Mined = {} : {} ". format(ListOfPeers[peer].cntInLongest(), ListOfPeers[peer].minedCnt))
+        print(
+            "Ratio of Blocks mined on the longest chain : Total Blocks Mined = {} : {} ".format(
+                ListOfPeers[peer].cntInLongest(), ListOfPeers[peer].minedCnt
+            )
+        )
         print(
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         )
@@ -183,16 +189,16 @@ def assign_z0(ListOfPeers, n):
     ListOfPeers[0].setSlow(False)
     ListOfPeers[1].setSlow(False)
 
-    #Assigning fast and slow nodes to other nodes
-    N=n-2 
-    z0=50   #half of all the honest nodes are slow
+    # Assigning fast and slow nodes to other nodes
+    N = n - 2
+    z0 = 50  # half of all the honest nodes are slow
     numTrues = int((z0 * N) / 100)
     labels = [True] * numTrues
     labelsFalse = [False] * (N - numTrues)
     labels += labelsFalse
     random.shuffle(labels)
-    for _ in range(2,n):
-        ListOfPeers[_].setSlow(labels[_-2])
+    for _ in range(2, n):
+        ListOfPeers[_].setSlow(labels[_ - 2])
 
 
 # Function to assign isLowCPU values to the Nodes randomly
@@ -201,23 +207,22 @@ def assign_z1(ListOfPeers, z1, n):
     ListOfPeers[0].setHashPower(args.Zeta1 / 100)
     ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
-    N = n-2
+    N = n - 2
     # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) = 1
     numTrues = int((z1 * N) / 100)
     labels = [True] * numTrues
-    hashPowerofLow = (1) * (100-args.Zeta1-args.Zeta2) / (10 * N - 9 * numTrues)
+    hashPowerofLow = (1) * (100 - args.Zeta1 - args.Zeta2) / (10 * N - 9 * numTrues)
     hashPowerofHigh = 10 * hashPowerofLow
 
     labelsFalse = [False] * (N - numTrues)
     labels += labelsFalse
     random.shuffle(labels)
-    for _ in range(2,n):
-        ListOfPeers[_].setLowCPU(labels[_-2])
-        if labels[_-2] == True:
+    for _ in range(2, n):
+        ListOfPeers[_].setLowCPU(labels[_ - 2])
+        if labels[_ - 2] == True:
             ListOfPeers[_].setHashPower(hashPowerofLow / 100)
         else:
-            ListOfPeers[_].setHashPower(hashPowerofHigh / 100)    
-    
+            ListOfPeers[_].setHashPower(hashPowerofHigh / 100)
 
 
 # function to generate Rho values between every pair of nodes

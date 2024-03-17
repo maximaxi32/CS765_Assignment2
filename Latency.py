@@ -22,7 +22,7 @@ def generateLatency(ListOfPeers, i, j, msgSize):
     rho = ListOfPeers[i].rhos[j]
 
     # masgSize is to be given in KBs
-    latency = ((rho) + (msgSize * 1000 * 8 / (c * 1000000)) + d)
+    latency = (rho) + (msgSize * 1000 * 8 / (c * 1000000)) + d
     return latency
 
 

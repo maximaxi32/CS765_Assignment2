@@ -1,6 +1,7 @@
 # importing libraries
 from PIL import Image
 from graphviz import Graph
+
 # importing user modules
 import Latency
 import Transaction
@@ -19,7 +20,7 @@ def plotter(ListOfPeers):
         g = Graph(
             "parent",
             filename="graph{}.png".format(peer.idx),
-            node_attr={"shape": "box3d", "color": "teal"} ,
+            node_attr={"shape": "box3d", "color": "teal"},
             format="png",
             edge_attr={"dir": "forward", "color": "brown"},
         )
@@ -32,19 +33,39 @@ def plotter(ListOfPeers):
                 continue
 
             if key.owner == ListOfPeers[0].Id:
-                if key in ListOfPeers[0].privateQueue:    # non-broadcasted blocks
-                    g.node(key.BlkId, label=str(key.depth), fillcolor="white;0.15:darkseagreen",style="radial")
+                if key in ListOfPeers[0].privateQueue:  # non-broadcasted blocks
+                    g.node(
+                        key.BlkId,
+                        label=str(key.depth),
+                        fillcolor="white;0.15:darkseagreen",
+                        style="radial",
+                    )
                     continue
                 else:
-                    g.node(key.BlkId, label=str(key.depth), fillcolor="darkseagreen",style="filled")
+                    g.node(
+                        key.BlkId,
+                        label=str(key.depth),
+                        fillcolor="darkseagreen",
+                        style="filled",
+                    )
                     continue
 
-            if key.owner == ListOfPeers[1].Id: 
-                if key in ListOfPeers[1].privateQueue:    # non-broadcasted blocks
-                    g.node(key.BlkId, label=str(key.depth), fillcolor="white;0.15:gold",style="radial")
+            if key.owner == ListOfPeers[1].Id:
+                if key in ListOfPeers[1].privateQueue:  # non-broadcasted blocks
+                    g.node(
+                        key.BlkId,
+                        label=str(key.depth),
+                        fillcolor="white;0.15:gold",
+                        style="radial",
+                    )
                     continue
                 else:
-                    g.node(key.BlkId, label=str(key.depth), fillcolor="gold",style="filled")
+                    g.node(
+                        key.BlkId,
+                        label=str(key.depth),
+                        fillcolor="gold",
+                        style="filled",
+                    )
                     continue
 
             g.node(key.BlkId, label=str(key.depth))
@@ -63,6 +84,7 @@ def plotter(ListOfPeers):
         # for generating a merged image of the blockchains
         imageFiles.append("graphs/{}.png".format(peer.idx))
         mergedBlockchains(imageFiles)
+
 
 # function to generate a merged image of the blockchains
 def mergedBlockchains(imageFiles):

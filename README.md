@@ -1,5 +1,5 @@
-# CS765 Spring 2023 Semester, Project Part-1
-# Simulation of a P2P Cryptocurrency Network
+# CS765 Spring 2023 Semester, Project Part-2
+# Simulation of a P2P Cryptocurrency Network, with Double Selfish Mining Attack
 
 
 ## Created By:
@@ -14,8 +14,8 @@
     pip3 install -r requirements.txt
 
 2. To compile and run the project, run the following command with your own choice of parameter values:
-    python3 main.py --n N --z0 Z0 --z1 Z1 --Tx TX --Itr ITR --Sim SIM \
-    e.g. python3 main.py --n 15 --z0 30 --z1 90 --Tx 0.5 --Itr 1 --Sim 100
+    python3 main.py --n N --z1 Z1 --Tx TX --Itr ITR --Sim SIM --Zeta1 ZETA1 --Zeta2 ZETA2\
+    e.g. python3 main.py --n 15 --z0 30 --z1 90 --Tx 0.5 --Itr 1 --Sim 100 --Zeta1 20 --Zeta2 30
 
 
 ## Generated Logs

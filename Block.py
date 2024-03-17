@@ -20,8 +20,10 @@ class Block:
         self.balances = []  # list of balances of the nodes after the transactions
         self.owner = owner  # owner/creator/miner of the block
         self.hash = ""  # hash value of the block
-        self.size = 0   # number of transactions in the block
-        self.depth = depth  # depth of the block in the blockchain, from the genesis block
+        self.size = 0  # number of transactions in the block
+        self.depth = (
+            depth  # depth of the block in the blockchain, from the genesis block
+        )
 
     # function to calculate the hash of the block
     def calculateHash(self):
@@ -70,6 +72,7 @@ class Block:
         copyOfBlk.depth = self.depth
         return copyOfBlk
 
+
 # class describing the genesis block of the blockchain
 class GenesisBlock:
     def __init__(self, timestamp, n):
@@ -79,7 +82,7 @@ class GenesisBlock:
         self.hash = str(hashlib.sha256((str(self.BlkId).encode())).hexdigest())
         self.depth = 1
         self.owner = "-1"
-    
+
     # function to get the hash of the genesis block
     def getHash(self):
         return self.hash

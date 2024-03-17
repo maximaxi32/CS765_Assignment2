@@ -15,31 +15,33 @@ import Blockchain
 # class describing a Peer node in the network
 class Node:
     # constructor
-    def __init__(self, n, expMean, idx, interArrival,selfish):
-        self.Id = str(uuid.uuid4()) # unique ID of the node
-        self.neighbors = [] # list of neighbors of the node
-        self.isSlow = False # boolean to check if the node is slow
-        self.isLowCPU = False   # boolean to check if the node has low CPU
-        self.toSleep = 1    # time to sleep before generating the next transaction
+    def __init__(self, n, expMean, idx, interArrival, selfish):
+        self.Id = str(uuid.uuid4())  # unique ID of the node
+        self.neighbors = []  # list of neighbors of the node
+        self.isSlow = False  # boolean to check if the node is slow
+        self.isLowCPU = False  # boolean to check if the node has low CPU
+        self.toSleep = 1  # time to sleep before generating the next transaction
         self.expMean = expMean  # mean of the exponential distribution for transaction generation delay
-        self.txnpool = []   # list of transactions in the transaction pool of this node
+        self.txnpool = []  # list of transactions in the transaction pool of this node
         self.verifiedPool = []  # list of verified transactions by this node
         self.idx = idx  # index of the node in the list of peers
         self.hashPower = 0  # hashPower of the node
-        self.tkMean = 0 # mean of the exponential distribution for block mining delay
+        self.tkMean = 0  # mean of the exponential distribution for block mining delay
         self.rhos = []  # list of rho values of the node with respect to other nodes
-        self.pending = []   # list of pending blocks to be added to the blockchain
-        self.invalid = []   # list of invalid blocks received by the node
+        self.pending = []  # list of pending blocks to be added to the blockchain
+        self.invalid = []  # list of invalid blocks received by the node
         self.blockchain = Blockchain.Blockchain(n)  # blockchain of the node
-        self.interArrival = interArrival    # interArrival time between two mine block events
-        self.minedCnt = 0   # count of the number of blocks mined by the node
-        self.receivedCnt = 0    # count of the number of blocks received by the node
-        ''' 
+        self.interArrival = (
+            interArrival  # interArrival time between two mine block events
+        )
+        self.minedCnt = 0  # count of the number of blocks mined by the node
+        self.receivedCnt = 0  # count of the number of blocks received by the node
+        """ 
         Assignment-2 attributes added
-        '''
+        """
         self.isSelfish = selfish  # boolean to check if the node is selfish
-        self.lead=0
-        self.privateQueue=[]
+        self.lead = 0
+        self.privateQueue = []
 
     # function to get the ID of the node
     def getID(self):
@@ -169,10 +171,10 @@ class Node:
 
     # function to mine a block by a node
     def mineBlock(self, timestamp, prevBlock, ListOfPeers, eventQueue):
-        '''
+        """
         Calling selfishMineBlock function if the node is selfish, not doing normal mining
-        '''
-        if self.idx==0 or self.idx==1:
+        """
+        if self.idx == 0 or self.idx == 1:
             self.selfishMineBlock(timestamp, prevBlock, ListOfPeers, eventQueue)
             return
 
@@ -347,10 +349,10 @@ class Node:
 
     # function to receive a block, sent by another peer
     def receiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
-        '''
+        """
         Calling selfishReceiveBlock function if the node is selfish, not doing normal mining
-        '''
-        if self.idx==0 or self.idx==1:
+        """
+        if self.idx == 0 or self.idx == 1:
             self.selfishReceiveBlock(timestamp, block, ListOfPeers, eventQueue)
             return
 
@@ -480,29 +482,31 @@ class Node:
     # function to get the number of blocks mined by the node in its longest chain
     def cntInLongest(self):
         return 0
-        cnt=0
-        if self.blockchain.farthestBlock.owner==self.Id:
-            cnt+=1
-        prev_hash=self.blockchain.farthestBlock.previous_hash
+        cnt = 0
+        if self.blockchain.farthestBlock.owner == self.Id:
+            cnt += 1
+        prev_hash = self.blockchain.farthestBlock.previous_hash
         # iteratively travelling back the blockchain from farthest block to genesis block
-        while prev_hash!=self.blockchain.genesisBlock.hash:
-            print(prev_hash,self.blockchain.genesisBlock.hash)
+        while prev_hash != self.blockchain.genesisBlock.hash:
+            print(prev_hash, self.blockchain.genesisBlock.hash)
             for blk in self.blockchain.chain:
-                #print("count function")
-                if blk.getHash()==prev_hash:
-                    if blk.owner==self.Id:
-                        cnt+=1
-                    prev_hash=blk.previous_hash
+                # print("count function")
+                if blk.getHash() == prev_hash:
+                    if blk.owner == self.Id:
+                        cnt += 1
+                    prev_hash = blk.previous_hash
                     break
         return cnt
 
-
-    '''
+    """
     Assignment-2 functions added
-    '''
+    """
+
     # function to SELFISHLY mine a block by a node
-    def selfishMineBlock(self,timestamp, prevBlock, ListOfPeers, eventQueue):
-        if self.lead==0 and (prevBlock.BlkId != self.blockchain.farthestBlock.BlkId):   # the last block of the new longest chain
+    def selfishMineBlock(self, timestamp, prevBlock, ListOfPeers, eventQueue):
+        if self.lead == 0 and (
+            prevBlock.BlkId != self.blockchain.farthestBlock.BlkId
+        ):  # the last block of the new longest chain
             newprevBlock = self.blockchain.getLastBlock()
             nextMine = np.random.exponential(self.tkMean)
             newtimestamp = timestamp + nextMine
@@ -521,9 +525,9 @@ class Node:
             )
             return
 
-        ''' 
+        """ 
         Even if the transaction pool size is 0, selfish miner still mines
-        '''
+        """
 
         # counting the number of blocks mined by the node in total
         self.minedCnt += 1
@@ -576,11 +580,11 @@ class Node:
 
         # adding the newly mined block to the blockchain
         newBlock.calculateHash()
-        #self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
+        # self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
 
         # adding the block to the selfish private queue
         self.privateQueue.append(newBlock)
-        self.lead+=1
+        self.lead += 1
 
         # writing the block to the log file
         with open("blockLogs/Node{}.txt".format(self.idx), "a") as myfile:
@@ -596,7 +600,7 @@ class Node:
         #     self.blockchain.longestLength = newBlock.depth
         #     self.blockchain.farthestBlock = newBlock
 
-        ''' VALID ONLY FOR HONEST MINERS
+        """ VALID ONLY FOR HONEST MINERS
         # broadcasting the newly mined block to its neighbors, with latency based on block size
         for neighbor in self.neighbors:
             newtimestamp = timestamp + Latency.generateLatency(
@@ -619,7 +623,7 @@ class Node:
                     ),
                 ]
             )
-        '''
+        """
 
         # adding the event to mine the next block after the intended random delay
         nextMine = np.random.exponential(self.tkMean)
@@ -632,7 +636,7 @@ class Node:
                 ),
             ]
         )
-        
+
     # function to SELFISHLY receive a block, sent by another peer
     def selfishReceiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
         # if the block is already in the blockchain, then ignore it
@@ -640,13 +644,16 @@ class Node:
             if blk.BlkId == block.BlkId:
                 return
 
-        #when lead greater than 2 and decreases by 1
-        if self.lead > 2 and block.previous_hash==self.blockchain.farthestBlock.getHash():
-            self.lead-=1
+        # when lead greater than 2 and decreases by 1
+        if (
+            self.lead > 2
+            and block.previous_hash == self.blockchain.farthestBlock.getHash()
+        ):
+            self.lead -= 1
             # broadcasting the newly mined block to its neighbors, with latency based on block size
-            newBlock=self.privateQueue[0]
+            newBlock = self.privateQueue[0]
             self.privateQueue.pop(0)
-            parentBlock=self.blockchain.getBlock(newBlock.previous_hash)
+            parentBlock = self.blockchain.getBlock(newBlock.previous_hash)
             self.blockchain.addBlock(newBlock, parentBlock)
             self.blockchain.longestLength = newBlock.depth
             self.blockchain.farthestBlock = newBlock
@@ -672,14 +679,16 @@ class Node:
                     ]
                 )
 
-       # when lead equals 2 or equals 1 and becomes zero
-        elif (self.lead == 2 or self.lead==1) and block.previous_hash==self.blockchain.farthestBlock.getHash():
-            self.lead=0
+        # when lead equals 2 or equals 1 and becomes zero
+        elif (
+            self.lead == 2 or self.lead == 1
+        ) and block.previous_hash == self.blockchain.farthestBlock.getHash():
+            self.lead = 0
             # emptying the private queue
-            while len(self.privateQueue)>0:
-                newBlock=self.privateQueue[0]
+            while len(self.privateQueue) > 0:
+                newBlock = self.privateQueue[0]
                 self.privateQueue.pop(0)
-                parentBlock=self.blockchain.getBlock(newBlock.previous_hash)
+                parentBlock = self.blockchain.getBlock(newBlock.previous_hash)
                 self.blockchain.addBlock(newBlock, parentBlock)
                 self.blockchain.longestLength = newBlock.depth
                 self.blockchain.farthestBlock = newBlock
@@ -705,12 +714,7 @@ class Node:
                         ]
                     )
 
-
-        
-
-            
         else:
-            
             # check if parent block exists in the blockchain, if not, put the block in the list of pending blocks
             parentblock = self.blockchain.getBlock(block.previous_hash)
             if parentblock == None:
@@ -761,7 +765,7 @@ class Node:
                     + "\n"
                 )
 
-            #check recursively if children of the received block exist in pending
+            # check recursively if children of the received block exist in pending
             stillsearching = True
             while stillsearching == True and len(self.pending) > 0:
                 stillsearching = False
@@ -788,7 +792,7 @@ class Node:
                                 self.blockchain.longestLength = blk.depth
                                 self.blockchain.farthestBlock = blk
 
-                        # broadcasting the receive block event to the neighbors, for one of the pending blocks
+                            # broadcasting the receive block event to the neighbors, for one of the pending blocks
                             for neighbor in self.neighbors:
                                 newtimestamp = timestamp + Latency.generateLatency(
                                     ListOfPeers, self.idx, neighbor.idx, blk.size
@@ -806,11 +810,11 @@ class Node:
                                         ),
                                     ]
                                 )
-                            #to check if some chain is being formed by the pending blocks
+                            # to check if some chain is being formed by the pending blocks
                             stillsearching = True
                             break
 
-            #broadcasting the block to neighbors, with some latency based on the size of the block
+            # broadcasting the block to neighbors, with some latency based on the size of the block
             for neighbor in self.neighbors:
                 newtimestamp = timestamp + Latency.generateLatency(
                     ListOfPeers, self.idx, neighbor.idx, copyOfBlk.size
