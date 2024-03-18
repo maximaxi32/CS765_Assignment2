@@ -37,7 +37,7 @@ def plotter(ListOfPeers):
                     g.node(
                         key.BlkId,
                         label=str(key.depth),
-                        fillcolor="white;0.15:darkseagreen",
+                        fillcolor="white;0.2:darkseagreen",
                         style="radial",
                     )
                     continue
@@ -55,7 +55,7 @@ def plotter(ListOfPeers):
                     g.node(
                         key.BlkId,
                         label=str(key.depth),
-                        fillcolor="white;0.15:gold",
+                        fillcolor="white;0.2:gold",
                         style="radial",
                     )
                     continue
