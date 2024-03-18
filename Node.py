@@ -11,6 +11,7 @@ import Event
 import Block
 import Blockchain
 
+random.seed(101)
 
 # class describing a Peer node in the network
 class Node:
@@ -42,6 +43,7 @@ class Node:
         self.isSelfish = selfish  # boolean to check if the node is selfish
         self.lead = 0
         self.privateQueue = []
+        self.privateReceived=[]
 
     # function to get the ID of the node
     def getID(self):
@@ -643,13 +645,19 @@ class Node:
         for blk in self.blockchain.chain:
             if blk.BlkId == block.BlkId:
                 return
+        
+        for blk in self.privateReceived:
+            if blk.BlkId == block.BlkId:
+                return
 
         # when lead greater than 2 and decreases by 1
         if (
             self.lead > 2
-            and block.previous_hash == self.blockchain.farthestBlock.getHash()
+            and block.depth == self.blockchain.farthestBlock.depth + 1
+            # and block.previous_hash == self.blockchain.farthestBlock.getHash()
         ):
             self.lead -= 1
+            self.privateReceived.append(block)
             # broadcasting the newly mined block to its neighbors, with latency based on block size
             newBlock = self.privateQueue[0]
             self.privateQueue.pop(0)
@@ -682,7 +690,10 @@ class Node:
         # when lead equals 2 or equals 1 and becomes zero
         elif (
             self.lead == 2 or self.lead == 1
-        ) and block.previous_hash == self.blockchain.farthestBlock.getHash():
+         and block.depth == self.blockchain.farthestBlock.depth + 1
+        # and block.previous_hash == self.blockchain.farthestBlock.getHash():
+        ):
+            self.privateReceived.append(block)
             self.lead = 0
             # emptying the private queue
             while len(self.privateQueue) > 0:
@@ -753,7 +764,6 @@ class Node:
             if copyOfBlk.depth > self.blockchain.longestLength:
                 self.blockchain.longestLength = copyOfBlk.depth
                 self.blockchain.farthestBlock = copyOfBlk
-
             # adding the block to the blockchain
             self.blockchain.addBlock(copyOfBlk, parentblock)
             # writing the block to the log file

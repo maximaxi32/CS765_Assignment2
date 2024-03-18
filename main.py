@@ -208,7 +208,7 @@ def assign_z1(ListOfPeers, z1, n):
     ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
     N = n - 2
-    # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) = 1
+    # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) + pow(0) + pow(1) = 1
     numTrues = int((z1 * N) / 100)
     labels = [True] * numTrues
     hashPowerofLow = (1) * (100 - args.Zeta1 - args.Zeta2) / (10 * N - 9 * numTrues)
