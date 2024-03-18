@@ -151,9 +151,10 @@ def main():
     Graph.plotter(ListOfPeers)
 
     # Printing the stats for all peers after simulation completes
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    
     totalMined = 0
     for peer in range(n):
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print(
             "Stats for Node {} having isSlow={} and isLowCPU={}".format(
                 ListOfPeers[peer].idx,
@@ -177,11 +178,21 @@ def main():
                 ListOfPeers[peer].cntInLongest(), ListOfPeers[peer].minedCnt
             )
         )
-        print(
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        )
+    
+    # printing one-time stats
+    print("===========================================================================")
     print("Number of Generate Transaction Events: " + str(genTxn))
     print("Total number of Blocks Mined:", totalMined)
+    '''
+    Added for assignment 2
+    '''
+    # MPU Node Adversary 1 = Number of block mined by an adversary in final public main chain / Total number of blocks mined by this adversary overall
+    # mpu1 = mpuCalculatorAdv(ListOfPeers, 0)
+    print("MPU Node Adversary 1:", None)
+    print("MPU Node Adversary 2:", None)
+    # MPU Node Overall = Number of block in the final public main chain / Total number of blocks generated across all the nodes
+    print("MPU Node Overall:", round(ListOfPeers[2].blockchain.farthestBlock.depth/totalMined, 5))
+    print("===========================================================================")
 
 
 # Function to assign isSlow values to the Nodes randomly

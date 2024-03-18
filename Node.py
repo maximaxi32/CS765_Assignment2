@@ -37,6 +37,7 @@ class Node:
         )
         self.minedCnt = 0  # count of the number of blocks mined by the node
         self.receivedCnt = 0  # count of the number of blocks received by the node
+
         """ 
         Assignment-2 attributes added
         """
@@ -483,14 +484,13 @@ class Node:
 
     # function to get the number of blocks mined by the node in its longest chain
     def cntInLongest(self):
-        return 0
         cnt = 0
         if self.blockchain.farthestBlock.owner == self.Id:
             cnt += 1
         prev_hash = self.blockchain.farthestBlock.previous_hash
         # iteratively travelling back the blockchain from farthest block to genesis block
         while prev_hash != self.blockchain.genesisBlock.hash:
-            print(prev_hash, self.blockchain.genesisBlock.hash)
+            # print(prev_hash, self.blockchain.genesisBlock.hash)
             for blk in self.blockchain.chain:
                 # print("count function")
                 if blk.getHash() == prev_hash:
@@ -645,10 +645,12 @@ class Node:
         for blk in self.blockchain.chain:
             if blk.BlkId == block.BlkId:
                 return
-        
-        for blk in self.privateReceived:
-            if blk.BlkId == block.BlkId:
-                return
+
+
+        # # if the block is already in the private queue, then ignore it
+        # for blk in self.privateReceived:
+        #     if blk.BlkId == block.BlkId:
+        #         return
 
         # when lead greater than 2 and decreases by 1
         if (
@@ -665,6 +667,37 @@ class Node:
             self.blockchain.addBlock(newBlock, parentBlock)
             self.blockchain.longestLength = newBlock.depth
             self.blockchain.farthestBlock = newBlock
+
+            # add the received block to your own blockchain
+            copyOfRecvBlk = block.deepCopyBlk()
+            # check recursively if children of the received block exist in pending
+            stillsearching = True
+            while stillsearching == True and len(self.pending) > 0:
+                stillsearching = False
+                for blk in self.pending:
+                    for currBlock in self.blockchain.chain:
+                        if blk.previous_hash == currBlock.getHash():
+                            # if the received block is a parent of one of the pending blocks, add it to the blockchain
+                            self.pending.remove(blk)
+                            self.blockchain.addBlock(blk, currBlock)
+                            # writing the block to the log file
+                            with open(
+                                "blockLogs/Node{}.txt".format(self.idx), "a"
+                            ) as myfile:
+                                myfile.write(
+                                    "RECEIVED Block with BlkId: {} @ Timestamp: {} by NodeIdx: {}".format(
+                                        blk.BlkId, timestamp, self.idx
+                                    )
+                                    + "\n"
+                                )
+                            stillsearching = True
+                            break
+            searchedParent = self.blockchain.getBlock(copyOfRecvBlk.previous_hash)
+            if(searchedParent):
+                self.blockchain.addBlock(copyOfRecvBlk, searchedParent)
+            else:
+                self.pending.append(copyOfRecvBlk)
+
             for neighbor in self.neighbors:
                 newtimestamp = timestamp + Latency.generateLatency(
                     ListOfPeers, self.idx, neighbor.idx, newBlock.size
@@ -703,6 +736,38 @@ class Node:
                 self.blockchain.addBlock(newBlock, parentBlock)
                 self.blockchain.longestLength = newBlock.depth
                 self.blockchain.farthestBlock = newBlock
+
+                # add the received block to your own blockchain
+                copyOfRecvBlk = block.deepCopyBlk()
+                # check recursively if children of the received block exist in pending
+                stillsearching = True
+                while stillsearching == True and len(self.pending) > 0:
+                    stillsearching = False
+                    for blk in self.pending:
+                        for currBlock in self.blockchain.chain:
+                            if blk.previous_hash == currBlock.getHash():
+                                # if the received block is a parent of one of the pending blocks, add it to the blockchain
+                                self.pending.remove(blk)
+                                self.blockchain.addBlock(blk, currBlock)
+                                # writing the block to the log file
+                                with open(
+                                    "blockLogs/Node{}.txt".format(self.idx), "a"
+                                ) as myfile:
+                                    myfile.write(
+                                        "RECEIVED Block with BlkId: {} @ Timestamp: {} by NodeIdx: {}".format(
+                                            blk.BlkId, timestamp, self.idx
+                                        )
+                                        + "\n"
+                                    )
+                                stillsearching = True
+                                break
+                searchedParent = self.blockchain.getBlock(copyOfRecvBlk.previous_hash)
+                if(searchedParent):
+                    self.blockchain.addBlock(copyOfRecvBlk, searchedParent)
+                else:
+                    self.pending.append(copyOfRecvBlk)
+
+
                 for neighbor in self.neighbors:
                     newtimestamp = timestamp + Latency.generateLatency(
                         ListOfPeers, self.idx, neighbor.idx, newBlock.size
@@ -802,46 +867,48 @@ class Node:
                                 self.blockchain.longestLength = blk.depth
                                 self.blockchain.farthestBlock = blk
 
-                            # broadcasting the receive block event to the neighbors, for one of the pending blocks
-                            for neighbor in self.neighbors:
-                                newtimestamp = timestamp + Latency.generateLatency(
-                                    ListOfPeers, self.idx, neighbor.idx, blk.size
-                                )
-                                eventQueue.put(
-                                    [
-                                        newtimestamp,
-                                        Event.Event(
-                                            neighbor,
-                                            newtimestamp,
-                                            blk.deepCopyBlk(),
-                                            "receiveBlock",
-                                            ListOfPeers,
-                                            eventQueue,
-                                        ),
-                                    ]
-                                )
+                            # # broadcasting the receive block event to the neighbors, for one of the pending blocks
+                            # for neighbor in self.neighbors:
+                            #     newtimestamp = timestamp + Latency.generateLatency(
+                            #         ListOfPeers, self.idx, neighbor.idx, blk.size
+                            #     )
+                            #     eventQueue.put(
+                            #         [
+                            #             newtimestamp,
+                            #             Event.Event(
+                            #                 neighbor,
+                            #                 newtimestamp,
+                            #                 blk.deepCopyBlk(),
+                            #                 "receiveBlock",
+                            #                 ListOfPeers,
+                            #                 eventQueue,
+                            #             ),
+                            #         ]
+                            #     )
                             # to check if some chain is being formed by the pending blocks
                             stillsearching = True
                             break
 
-            # broadcasting the block to neighbors, with some latency based on the size of the block
-            for neighbor in self.neighbors:
-                newtimestamp = timestamp + Latency.generateLatency(
-                    ListOfPeers, self.idx, neighbor.idx, copyOfBlk.size
-                )
-                eventQueue.put(
-                    [
-                        newtimestamp,
-                        Event.Event(
-                            neighbor,
-                            newtimestamp,
-                            copyOfBlk,
-                            "receiveBlock",
-                            ListOfPeers,
-                            eventQueue,
-                        ),
-                    ]
-                )
+
+
+            # # broadcasting the block to neighbors, with some latency based on the size of the block
+            # for neighbor in self.neighbors:
+            #     newtimestamp = timestamp + Latency.generateLatency(
+            #         ListOfPeers, self.idx, neighbor.idx, copyOfBlk.size
+            #     )
+            #     eventQueue.put(
+            #         [
+            #             newtimestamp,
+            #             Event.Event(
+            #                 neighbor,
+            #                 newtimestamp,
+            #                 copyOfBlk,
+            #                 "receiveBlock",
+            #                 ListOfPeers,
+            #                 eventQueue,
+            #             ),
+            #         ]
+            #     )
 
 
 # function to generate a deepcopy of a list
