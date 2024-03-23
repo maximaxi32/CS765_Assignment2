@@ -53,6 +53,7 @@ def main():
     zeta1 = args.Zeta1
     zeta2 = args.Zeta2
 
+
     eventQueue = (
         PriorityQueue()
     )  # Global Event Queue implemented with a min Priority Queue
@@ -186,12 +187,13 @@ def main():
     '''
     Added for assignment 2
     '''
-    # MPU Node Adversary 1 = Number of block mined by an adversary in final public main chain / Total number of blocks mined by this adversary overall
-    # mpu1 = mpuCalculatorAdv(ListOfPeers, 0)
-    print("MPU Node Adversary 1:", None)
-    print("MPU Node Adversary 2:", None)
+    # MPU Node Adversary = Number of block mined by an adversary in final public main chain / Total number of blocks mined by this adversary overall
+    mpu1 = mpuCalculatorAdv(ListOfPeers, 0)
+    mpu2 = mpuCalculatorAdv(ListOfPeers, 1)
+    print("MPU Node Adversary 1:", mpu1)
+    print("MPU Node Adversary 2:", mpu2)
     # MPU Node Overall = Number of block in the final public main chain / Total number of blocks generated across all the nodes
-    print("MPU Node Overall:", round(ListOfPeers[2].blockchain.farthestBlock.depth/totalMined, 5))
+    print("MPU Node Overall:", round(ListOfPeers[2].blockchain.farthestBlock.depth/totalMined, 4))
     print("===========================================================================")
 
 
@@ -215,6 +217,12 @@ def assign_z0(ListOfPeers, n):
 # Function to assign isLowCPU values to the Nodes randomly
 def assign_z1(ListOfPeers, n):
     args = parser.parse_args()
+    # Handling zero hashpower input case for adversaries
+    if(args.Zeta1==0):
+        args.Zeta1=0.0000001
+    if(args.Zeta2==0):
+        args.Zeta2=0.0000001   
+
     ListOfPeers[0].setHashPower(args.Zeta1 / 100)
     ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
@@ -245,6 +253,34 @@ def rhoGenerator(ListOfPeers):
             currentRho = np.random.uniform(0.01, 0.5)
             ListOfPeers[i].rhos[ListOfPeers[j].idx] = currentRho
             ListOfPeers[j].rhos[ListOfPeers[i].idx] = currentRho
+
+
+"""
+Assignment-2 functions added
+"""
+
+#Calculates mpu value for an adversary w.r.t Honest Node 1 (Node with idx = 2 )
+def mpuCalculatorAdv(ListOfPeers, advIdx):
+    cnt = 0
+    honest=ListOfPeers[2]
+    adversary=ListOfPeers[advIdx]
+    # if adversary has not mined any block then ratio undefined
+    if adversary.minedCnt==0:
+        return "No Blocks Mined by Adversary"
+
+    if honest.blockchain.farthestBlock.owner == adversary.Id:
+        cnt += 1
+    prev_hash = honest.blockchain.farthestBlock.previous_hash
+    # iteratively travelling back the blockchain from farthest block to genesis block
+    while prev_hash != honest.blockchain.genesisBlock.hash:
+        for blk in honest.blockchain.chain:
+            if blk.getHash() == prev_hash:
+                if blk.owner == adversary.Id:
+                    cnt += 1
+                prev_hash = blk.previous_hash
+                break
+    #returning MPU Adversary ratio
+    return round(cnt/adversary.minedCnt,4)
 
 
 # calling the main function

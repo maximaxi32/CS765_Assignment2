@@ -490,9 +490,7 @@ class Node:
         prev_hash = self.blockchain.farthestBlock.previous_hash
         # iteratively travelling back the blockchain from farthest block to genesis block
         while prev_hash != self.blockchain.genesisBlock.hash:
-            # print(prev_hash, self.blockchain.genesisBlock.hash)
             for blk in self.blockchain.chain:
-                # print("count function")
                 if blk.getHash() == prev_hash:
                     if blk.owner == self.Id:
                         cnt += 1
