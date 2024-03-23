@@ -28,9 +28,9 @@ def main():
     # Declaring user arguments
     parser.add_argument("--n", type=int, required=True)  # number of Nodes
     # parser.add_argument("--z0", type=float, required=True)  # percentage of slow nodes
-    parser.add_argument(
-        "--z1", type=float, required=True
-    )  # percentage of low CPU nodes
+    # parser.add_argument(
+    #     "--z1", type=float, required=True
+    # )  # percentage of low CPU nodes
     parser.add_argument(
         "--Tx", type=float, required=True
     )  # mean time for interarrival between two generated Transactions in seconds
@@ -46,7 +46,7 @@ def main():
     args = parser.parse_args()
     n = args.n
     # z0 = args.z0
-    z1 = args.z1
+    # z1 = args.z1
     Tx = args.Tx
     Itr = args.Itr
     timeLimit = args.Sim
@@ -96,7 +96,7 @@ def main():
 
     # Assigning isSlow and isLowCPU values to the Nodes
     assign_z0(ListOfPeers, n)
-    assign_z1(ListOfPeers, z1, n)
+    assign_z1(ListOfPeers, n)
 
     # Generating the first mineBlock event for each Node
     for peer in ListOfPeers:
@@ -213,12 +213,13 @@ def assign_z0(ListOfPeers, n):
 
 
 # Function to assign isLowCPU values to the Nodes randomly
-def assign_z1(ListOfPeers, z1, n):
+def assign_z1(ListOfPeers, n):
     args = parser.parse_args()
     ListOfPeers[0].setHashPower(args.Zeta1 / 100)
     ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
     N = n - 2
+    z1=0 #All honest miners have equal hashing power
     # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) + pow(0) + pow(1) = 1
     numTrues = int((z1 * N) / 100)
     labels = [True] * numTrues
@@ -234,7 +235,7 @@ def assign_z1(ListOfPeers, z1, n):
             ListOfPeers[_].setHashPower(hashPowerofLow / 100)
         else:
             ListOfPeers[_].setHashPower(hashPowerofHigh / 100)
-
+            
 
 # function to generate Rho values between every pair of nodes
 def rhoGenerator(ListOfPeers):

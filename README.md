@@ -14,8 +14,8 @@
     pip3 install -r requirements.txt
 
 2. To compile and run the project, run the following command with your own choice of parameter values:\
-    python3 main.py --n N --z1 Z1 --Tx TX --Itr ITR --Sim SIM --Zeta1 ZETA1 --Zeta2 ZETA2\
-    e.g. python3 main.py --n 15 --z1 90 --Tx 0.5 --Itr 1 --Sim 100 --Zeta1 20 --Zeta2 30
+    python3 main.py --n N --Tx TX --Itr ITR --Sim SIM --Zeta1 ZETA1 --Zeta2 ZETA2\
+    e.g. python3 main.py --n 15 --Tx 0.5 --Itr 1 --Sim 100 --Zeta1 20 --Zeta2 30
 
 
 ## Generated Logs
