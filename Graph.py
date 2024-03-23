@@ -79,6 +79,7 @@ def plotter(ListOfPeers):
                 edges.add((key.BlkId, children.BlkId))
 
         # render the graph and save them as images
+        g.attr(label="Green: Adversary 1, Gold: Adversary 2")
         g.render("graphs/" + str(peer.idx), view=False)
 
         # for generating a merged image of the blockchains
