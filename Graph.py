@@ -2,13 +2,6 @@
 from PIL import Image
 from graphviz import Graph
 
-# importing user modules
-import Latency
-import Transaction
-import Event
-import Block
-import Blockchain
-
 
 # function to generate images(graph visualisation) of blockchains for all the nodes, and one merged image
 def plotter(ListOfPeers):
@@ -33,7 +26,9 @@ def plotter(ListOfPeers):
                 continue
 
             if key.owner == ListOfPeers[0].Id:
-                if key in ListOfPeers[0].privateQueue:  # non-broadcasted blocks
+                if (
+                    key in ListOfPeers[0].privateQueue
+                ):  # non-broadcasted blocks of adversary 1
                     g.node(
                         key.BlkId,
                         label=str(key.depth),
@@ -51,7 +46,9 @@ def plotter(ListOfPeers):
                     continue
 
             if key.owner == ListOfPeers[1].Id:
-                if key in ListOfPeers[1].privateQueue:  # non-broadcasted blocks
+                if (
+                    key in ListOfPeers[1].privateQueue
+                ):  # non-broadcasted blocks of adversary 2
                     g.node(
                         key.BlkId,
                         label=str(key.depth),

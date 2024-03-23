@@ -3,10 +3,6 @@ import uuid
 import numpy as np
 from collections import defaultdict
 
-# importing user modules
-import Node
-import Network
-
 
 # function to return latency between two nodes for a given message size
 def generateLatency(ListOfPeers, i, j, msgSize):

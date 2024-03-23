@@ -4,9 +4,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 
-# importing user modules
-import Node
-
 
 # function to create a P2P network of Peer Nodes
 def createNetwork(ListofPeers):

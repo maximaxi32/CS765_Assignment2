@@ -2,12 +2,6 @@
 import hashlib
 import uuid
 
-# importing other modules
-import Latency
-import Transaction
-import Event
-import Node
-
 
 # class describing a block in the Blockchain
 class Block:

@@ -2,7 +2,6 @@
 import uuid
 import numpy as np
 import random
-import copy
 
 # importing other modules
 import Latency
@@ -11,7 +10,6 @@ import Event
 import Block
 import Blockchain
 
-random.seed(101)
 
 # class describing a Peer node in the network
 class Node:
@@ -42,9 +40,13 @@ class Node:
         Assignment-2 attributes added
         """
         self.isSelfish = selfish  # boolean to check if the node is selfish
-        self.lead = 0
-        self.privateQueue = []
-        self.privateReceived=[]
+        self.lead = 0  # lead of the selfish miner w.r.t. to the honest chain
+        self.privateQueue = (
+            []
+        )  # queue storing the private blocks of the selfish miner, i.e. blocks not yet released
+        self.privateReceived = (
+            []
+        )  # list storing the blocks received by the selfish miner, but not broadcasted
 
     # function to get the ID of the node
     def getID(self):
@@ -175,7 +177,7 @@ class Node:
     # function to mine a block by a node
     def mineBlock(self, timestamp, prevBlock, ListOfPeers, eventQueue):
         """
-        Calling selfishMineBlock function if the node is selfish, not doing normal mining
+        Calling selfishMineBlock function if the node is selfish, avoiding doing normal+honest mining
         """
         if self.idx == 0 or self.idx == 1:
             self.selfishMineBlock(timestamp, prevBlock, ListOfPeers, eventQueue)
@@ -353,7 +355,7 @@ class Node:
     # function to receive a block, sent by another peer
     def receiveBlock(self, timestamp, block, ListOfPeers, eventQueue):
         """
-        Calling selfishReceiveBlock function if the node is selfish, not doing normal mining
+        Calling selfishReceiveBlock function if the node is selfish, not doing normal+honest receiving
         """
         if self.idx == 0 or self.idx == 1:
             self.selfishReceiveBlock(timestamp, block, ListOfPeers, eventQueue)
@@ -504,6 +506,7 @@ class Node:
 
     # function to SELFISHLY mine a block by a node
     def selfishMineBlock(self, timestamp, prevBlock, ListOfPeers, eventQueue):
+        # if the previous block mined by the attacker is not the farthest block, then schedule the next mineBlock event on the new longest chain
         if self.lead == 0 and (
             prevBlock.BlkId != self.blockchain.farthestBlock.BlkId
         ):  # the last block of the new longest chain
@@ -578,12 +581,13 @@ class Node:
                     txn
                 )  # add the transaction to the verified transactions pool
 
-        # adding the newly mined block to the blockchain
+        # NOT adding the newly mined block to the blockchain directly
         newBlock.calculateHash()
         # self.blockchain.addBlock(newBlock, self.blockchain.farthestBlock)
 
-        # adding the block to the selfish private queue
+        # adding the block to the selfish private queue, to be released at an appropriate time
         self.privateQueue.append(newBlock)
+        # lead gained by the selfish miner, as it has mined a block
         self.lead += 1
 
         # writing the block to the log file
@@ -595,12 +599,13 @@ class Node:
                 + "\n"
             )
 
+        """ VALID ONLY FOR HONEST MINERS
+
         # updating the longest chain and farthest block, as the new block is on the longest chain
         # if newBlock.depth > self.blockchain.longestLength:
         #     self.blockchain.longestLength = newBlock.depth
         #     self.blockchain.farthestBlock = newBlock
-
-        """ VALID ONLY FOR HONEST MINERS
+        
         # broadcasting the newly mined block to its neighbors, with latency based on block size
         for neighbor in self.neighbors:
             newtimestamp = timestamp + Latency.generateLatency(
@@ -644,29 +649,28 @@ class Node:
             if blk.BlkId == block.BlkId:
                 return
 
-
-        # # if the block is already in the private queue, then ignore it
-        # for blk in self.privateReceived:
-        #     if blk.BlkId == block.BlkId:
-        #         return
-
-        # when lead greater than 2 and decreases by 1
+        # when lead greater than 2 and it decreases by 1
         if (
             self.lead > 2
             and block.depth == self.blockchain.farthestBlock.depth + 1
             # and block.previous_hash == self.blockchain.farthestBlock.getHash()
         ):
+            # attacker lost the lead by 1 as it received a block mined by someone else
             self.lead -= 1
+            # adding the block to the private received list
             self.privateReceived.append(block)
-            # broadcasting the newly mined block to its neighbors, with latency based on block size
+
+            # newBlock is the block to be released from the private queue
             newBlock = self.privateQueue[0]
             self.privateQueue.pop(0)
+
+            # adding the newly released block to our blockchain
             parentBlock = self.blockchain.getBlock(newBlock.previous_hash)
             self.blockchain.addBlock(newBlock, parentBlock)
             self.blockchain.longestLength = newBlock.depth
             self.blockchain.farthestBlock = newBlock
 
-            # add the received block to your own blockchain
+            # add the received block to your own blockchain, after making a deepcopy of it
             copyOfRecvBlk = block.deepCopyBlk()
             # check recursively if children of the received block exist in pending
             stillsearching = True
@@ -691,11 +695,12 @@ class Node:
                             stillsearching = True
                             break
             searchedParent = self.blockchain.getBlock(copyOfRecvBlk.previous_hash)
-            if(searchedParent):
+            if searchedParent:
                 self.blockchain.addBlock(copyOfRecvBlk, searchedParent)
             else:
                 self.pending.append(copyOfRecvBlk)
 
+            # broadcasting the newly released block to its neighbors, with latency based on block size
             for neighbor in self.neighbors:
                 newtimestamp = timestamp + Latency.generateLatency(
                     ListOfPeers, self.idx, neighbor.idx, newBlock.size
@@ -720,13 +725,14 @@ class Node:
 
         # when lead equals 2 or equals 1 and becomes zero
         elif (
-            self.lead == 2 or self.lead == 1
-         and block.depth == self.blockchain.farthestBlock.depth + 1
-        # and block.previous_hash == self.blockchain.farthestBlock.getHash():
+            self.lead == 2
+            or self.lead == 1
+            and block.depth == self.blockchain.farthestBlock.depth + 1
+            # and block.previous_hash == self.blockchain.farthestBlock.getHash():
         ):
             self.privateReceived.append(block)
             self.lead = 0
-            # emptying the private queue
+            # emptying the private queue, releasing all the blocks in it
             while len(self.privateQueue) > 0:
                 newBlock = self.privateQueue[0]
                 self.privateQueue.pop(0)
@@ -760,11 +766,10 @@ class Node:
                                 stillsearching = True
                                 break
                 searchedParent = self.blockchain.getBlock(copyOfRecvBlk.previous_hash)
-                if(searchedParent):
+                if searchedParent:
                     self.blockchain.addBlock(copyOfRecvBlk, searchedParent)
                 else:
                     self.pending.append(copyOfRecvBlk)
-
 
                 for neighbor in self.neighbors:
                     newtimestamp = timestamp + Latency.generateLatency(
@@ -788,6 +793,7 @@ class Node:
                         ]
                     )
 
+        # received a block that does not decrease the lead of the attacker - simply add it to own blockchain
         else:
             # check if parent block exists in the blockchain, if not, put the block in the list of pending blocks
             parentblock = self.blockchain.getBlock(block.previous_hash)
@@ -865,6 +871,9 @@ class Node:
                                 self.blockchain.longestLength = blk.depth
                                 self.blockchain.farthestBlock = blk
 
+                            """
+                            ADVERSARY IS MALICIOUS HENCE DOES NOT BROADCAST THE RECEIVED BLOCK
+                            """
                             # # broadcasting the receive block event to the neighbors, for one of the pending blocks
                             # for neighbor in self.neighbors:
                             #     newtimestamp = timestamp + Latency.generateLatency(
@@ -887,8 +896,9 @@ class Node:
                             stillsearching = True
                             break
 
-
-
+            """
+            ADVERSARY IS MALICIOUS HENCE DOES NOT BROADCAST THE RECEIVED BLOCK
+            """
             # # broadcasting the block to neighbors, with some latency based on the size of the block
             # for neighbor in self.neighbors:
             #     newtimestamp = timestamp + Latency.generateLatency(

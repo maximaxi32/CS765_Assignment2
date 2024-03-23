@@ -23,14 +23,13 @@ parser = argparse.ArgumentParser()
 
 
 # This is the main function
-# usage: main.py [-h] --n N --z0 Z0 --z1 Z1 --Tx TX --Itr ITR --Sim SIM
+# usage: python3 main.py [-h] --n N --Tx TX --Itr ITR --Sim SIM --Zeta1 ZETA1 --Zeta2 ZETA2
 def main():
+
     # Declaring user arguments
     parser.add_argument("--n", type=int, required=True)  # number of Nodes
     # parser.add_argument("--z0", type=float, required=True)  # percentage of slow nodes
-    # parser.add_argument(
-    #     "--z1", type=float, required=True
-    # )  # percentage of low CPU nodes
+    # parser.add_argument("--z1", type=float, required=True)  # percentage of low CPU nodes
     parser.add_argument(
         "--Tx", type=float, required=True
     )  # mean time for interarrival between two generated Transactions in seconds
@@ -40,8 +39,13 @@ def main():
     parser.add_argument(
         "--Sim", type=float, required=True
     )  # Total simulation time in seconds
-    parser.add_argument("--Zeta1", type=float, required=True)
-    parser.add_argument("--Zeta2", type=float, required=True)
+    parser.add_argument(
+        "--Zeta1", type=float, required=True
+    )  # Hash power of Adversary 1, given in percentage
+    parser.add_argument(
+        "--Zeta2", type=float, required=True
+    )  # Hash power of Adversary 2, given in percentage
+
     # Parsing the arguments
     args = parser.parse_args()
     n = args.n
@@ -52,7 +56,6 @@ def main():
     timeLimit = args.Sim
     zeta1 = args.Zeta1
     zeta2 = args.Zeta2
-
 
     eventQueue = (
         PriorityQueue()
@@ -152,10 +155,12 @@ def main():
     Graph.plotter(ListOfPeers)
 
     # Printing the stats for all peers after simulation completes
-    
+
     totalMined = 0
     for peer in range(n):
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        )
         print(
             "Stats for Node {} having isSlow={} and isLowCPU={}".format(
                 ListOfPeers[peer].idx,
@@ -179,21 +184,24 @@ def main():
                 ListOfPeers[peer].cntInLongest(), ListOfPeers[peer].minedCnt
             )
         )
-    
-    # printing one-time stats
+
+    # printing one-time stats at the end of the simulation
     print("===========================================================================")
     print("Number of Generate Transaction Events: " + str(genTxn))
     print("Total number of Blocks Mined:", totalMined)
-    '''
+    """
     Added for assignment 2
-    '''
+    """
     # MPU Node Adversary = Number of block mined by an adversary in final public main chain / Total number of blocks mined by this adversary overall
     mpu1 = mpuCalculatorAdv(ListOfPeers, 0)
     mpu2 = mpuCalculatorAdv(ListOfPeers, 1)
     print("MPU Node Adversary 1:", mpu1)
     print("MPU Node Adversary 2:", mpu2)
     # MPU Node Overall = Number of block in the final public main chain / Total number of blocks generated across all the nodes
-    print("MPU Node Overall:", round(ListOfPeers[2].blockchain.farthestBlock.depth/totalMined, 4))
+    print(
+        "MPU Node Overall:",
+        round(ListOfPeers[2].blockchain.farthestBlock.depth / totalMined, 4),
+    )
     print("===========================================================================")
 
 
@@ -204,7 +212,7 @@ def assign_z0(ListOfPeers, n):
 
     # Assigning fast and slow nodes to other nodes
     N = n - 2
-    z0 = 50  # half of all the honest nodes are slow
+    z0 = 50  # Assignment 2: half of all the honest nodes are slow
     numTrues = int((z0 * N) / 100)
     labels = [True] * numTrues
     labelsFalse = [False] * (N - numTrues)
@@ -218,16 +226,17 @@ def assign_z0(ListOfPeers, n):
 def assign_z1(ListOfPeers, n):
     args = parser.parse_args()
     # Handling zero hashpower input case for adversaries
-    if(args.Zeta1==0):
-        args.Zeta1=0.0000001
-    if(args.Zeta2==0):
-        args.Zeta2=0.0000001   
+    if args.Zeta1 == 0:
+        args.Zeta1 = 0.0000001
+    if args.Zeta2 == 0:
+        args.Zeta2 = 0.0000001
 
     ListOfPeers[0].setHashPower(args.Zeta1 / 100)
     ListOfPeers[1].setHashPower(args.Zeta2 / 100)
 
     N = n - 2
-    z1=0 #All honest miners have equal hashing power
+    z1 = 0  # Assignment 2: All honest miners have equal hashing power, so repurposed the function to make all honest nodes same
+
     # hashPowerofLow * n * z1 + hashPowerofHigh * (n - (n * z1) + pow(0) + pow(1) = 1
     numTrues = int((z1 * N) / 100)
     labels = [True] * numTrues
@@ -243,7 +252,7 @@ def assign_z1(ListOfPeers, n):
             ListOfPeers[_].setHashPower(hashPowerofLow / 100)
         else:
             ListOfPeers[_].setHashPower(hashPowerofHigh / 100)
-            
+
 
 # function to generate Rho values between every pair of nodes
 def rhoGenerator(ListOfPeers):
@@ -259,13 +268,15 @@ def rhoGenerator(ListOfPeers):
 Assignment-2 functions added
 """
 
-#Calculates mpu value for an adversary w.r.t Honest Node 1 (Node with idx = 2 )
+
+# Calculates mpu value for an adversary w.r.t Honest Node 1 (Node having idx = 2)
 def mpuCalculatorAdv(ListOfPeers, advIdx):
     cnt = 0
-    honest=ListOfPeers[2]
-    adversary=ListOfPeers[advIdx]
-    # if adversary has not mined any block then ratio undefined
-    if adversary.minedCnt==0:
+    honest = ListOfPeers[2]
+    adversary = ListOfPeers[advIdx]
+
+    # if adversary has not mined any block then the ratio is undefined
+    if adversary.minedCnt == 0:
         return "No Blocks Mined by Adversary"
 
     if honest.blockchain.farthestBlock.owner == adversary.Id:
@@ -279,8 +290,8 @@ def mpuCalculatorAdv(ListOfPeers, advIdx):
                     cnt += 1
                 prev_hash = blk.previous_hash
                 break
-    #returning MPU Adversary ratio
-    return round(cnt/adversary.minedCnt,4)
+    # returning MPU Adversary ratio
+    return round(cnt / adversary.minedCnt, 4)
 
 
 # calling the main function
