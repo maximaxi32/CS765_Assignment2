@@ -1,4 +1,4 @@
-# CS765 Spring 2023 Semester, Project Part-2
+# CS765 Spring 2023-24 Semester, Project Part-2
 # Simulation of a P2P Cryptocurrency Network, with Double Selfish Mining Attack
 
 
