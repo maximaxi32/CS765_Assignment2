@@ -1,6 +1,6 @@
 # CS765 Spring 2023-24 Semester, Project Part-2
 # Simulation of a P2P Cryptocurrency Network, with Double Selfish Mining Attack
-
+(Part-1 Link: https://github.com/maximaxi32/CS765_Assignment1)
 
 ## Created By:
 ### Abhishek Dixit (22M0761), Rishabh Singh (22M0762) and Osim Abes (22M0825)
